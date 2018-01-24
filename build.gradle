@@ -1,0 +1,35 @@
+plugins {
+    id 'groovy'
+    id 'idea'
+    id 'java-gradle-plugin'
+    id 'maven-publish'
+}
+
+group = 'io.lacasse.gradle'
+version = '0.0.1'
+
+repositories {
+    jcenter()
+    mavenCentral()
+}
+
+dependencies {
+    implementation gradleApi()
+    implementation localGroovy()
+
+    testImplementation gradleTestKit()
+    testImplementation('org.spockframework:spock-core:1.1-groovy-2.4') {
+        exclude group: 'org.codehaus.groovy'
+    }
+}
+
+publishing {
+    repositories {
+        mavenLocal()
+    }
+    publications {
+        plugin(MavenPublication) {
+            from components.java
+        }
+    }
+}

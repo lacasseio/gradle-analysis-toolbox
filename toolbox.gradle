@@ -1,0 +1,32 @@
+initscript {
+    repositories {
+        mavenLocal()
+    }
+    dependencies {
+        classpath 'io.lacasse.gradle:gradle-analysis-toolbox:latest.integration'
+    }
+}
+
+rootProject {
+    def sourceTraceProvider = provider {
+        def prop = findProperty('trace.source')
+        if (prop == null) {
+            throw new IllegalArgumentException('Please provide source operations trace via `-Ptrace.source=...`.')
+        }
+        return layout.projectDirectory.file(prop)
+    }
+    def targetTraceProvider = provider {
+        def prop = findProperty('trace.target')
+        if (prop == null) {
+            throw new IllegalArgumentException('Please provide target operations trace via `-Ptrace.target=...`.')
+        }
+        return layout.projectDirectory.file(prop)
+    }
+
+    task compare(type: io.lacasse.gradle.toolbox.tasks.CompareTaskExecutionDuration) {
+        group = 'Analysis Toolbox'
+        sourceTrace = sourceTraceProvider
+        targetTrace = targetTraceProvider
+        resultFile = file('result.csv')
+    }
+}
