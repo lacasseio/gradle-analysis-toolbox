@@ -1,3 +1,5 @@
+import io.lacasse.gradle.toolbox.tasks.BuildOperationDurationComparision
+
 initscript {
     repositories {
         mavenLocal()
@@ -8,25 +10,5 @@ initscript {
 }
 
 rootProject {
-    tasks.withType(io.lacasse.gradle.toolbox.tasks.AbstractOperationsTraceTask) {
-        group = 'Analysis Toolbox'
-        sourceTrace = provider {
-            def prop = findProperty('trace.source')
-            if (prop == null) {
-                throw new IllegalArgumentException('Please provide source operations trace via `-Ptrace.source=...`.')
-            }
-            return layout.projectDirectory.file(prop)
-        }
-        targetTrace = provider {
-            def prop = findProperty('trace.target')
-            if (prop == null) {
-                throw new IllegalArgumentException('Please provide target operations trace via `-Ptrace.target=...`.')
-            }
-            return layout.projectDirectory.file(prop)
-        }
-    }
-
-    task compare(type: io.lacasse.gradle.toolbox.tasks.CompareTaskExecutionDuration) {
-        resultFile = file('result.csv')
-    }
+    apply plugin: io.lacasse.gradle.toolbox.plugins.AnalysisToolboxPlugin
 }

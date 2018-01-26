@@ -11,15 +11,18 @@ abstract class AbstractIntegrationTest extends Specification {
     @Rule TemporaryFolder testDirectory = new TemporaryFolder()
     BuildResult result
     BuildResult failure
+    private List<String> arguments = new ArrayList<String>()
 
     BuildResult succeeds(String... tasks) {
         def args = new ArrayList<String>()
+        args.addAll(arguments)
         args.addAll(tasks)
         args.add('-s')
         result = GradleRunner.create()
                 .withProjectDir(testDirectory.root)
                 .withArguments(args)
                 .withPluginClasspath()
+                .withDebug(true)
                 .forwardOutput()
                 .build()
         return result
@@ -27,15 +30,21 @@ abstract class AbstractIntegrationTest extends Specification {
 
     BuildResult fails(String... tasks) {
         def args = new ArrayList<String>()
+        args.addAll(arguments)
         args.addAll(tasks)
         args.add('-s')
         failure = GradleRunner.create()
                 .withProjectDir(testDirectory.root)
                 .withArguments(args)
                 .withPluginClasspath()
+                .withDebug(true)
                 .forwardOutput()
                 .buildAndFail()
         return failure
+    }
+
+    void withArguments(String... args) {
+        arguments.addAll(args)
     }
 
     File file(String filePath) {
