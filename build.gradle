@@ -23,6 +23,10 @@ dependencies {
     }
 }
 
+test {
+    systemProperty('toolbox.path', "$projectDir/toolbox.gradle")
+}
+
 publishing {
     repositories {
         mavenLocal()

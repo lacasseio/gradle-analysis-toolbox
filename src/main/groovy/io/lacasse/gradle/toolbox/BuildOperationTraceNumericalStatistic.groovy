@@ -8,6 +8,7 @@ class BuildOperationTraceNumericalStatistic {
     }
 
     int getMax() {
+        println diffValues
         return Collections.max(diffValues)
     }
 
@@ -35,10 +36,27 @@ class BuildOperationTraceNumericalStatistic {
         println "Median: ${median}"
     }
 
+    void writeDiff(PrintWriter out) {
+        def tasks = data.keySet().toList().sort()
+
+        out.println "Task Name,Source Duration,Target Duration,Diff Duration"
+        tasks.each {
+            def row = data.get(it)
+            out.print "$it,"
+            out.print !row.containsKey('source') ? "N/A," : "${row.get('source')},"
+            out.print !row.containsKey('target') ? "N/A," : "${row.get('target')},"
+            out.println !row.containsKey('diff') ? "N/A" : row.get('diff')
+        }
+
+        out.flush()
+        out.close()
+    }
+
     private List<Integer> getDiffValues() {
-        return data.values().findAll { it.containsKey('diff') }.collect {
+        def g = data.values().findAll { it.containsKey('diff') && it.diff != null }.collect {
             it.diff
         }
+        return g
     }
 
     static class Builder {
@@ -78,16 +96,12 @@ class BuildOperationTraceNumericalStatistic {
                     .flatten()
                     .findAll(filter)
                     .collectEntries {
-                        println it
-                        println key(it)
                         [(key(it)): value(it)]
                     }
             Map target = BuildOperationTrace.load(targetTraceFile)
                     .flatten()
                     .findAll(filter)
                     .collectEntries {
-                println it
-                println key(it)
                         [(key(it)): value(it)]
                     }
 
@@ -95,8 +109,8 @@ class BuildOperationTraceNumericalStatistic {
 
             def result = [:]
             tasks.each {
-                def a = source.containsKey(it) ? source[it] : null
-                def b = target.containsKey(it) ? target[it] : null
+                def a = source.containsKey(it) ? source.get(it) : null
+                def b = target.containsKey(it) ? target.get(it) : null
 
                 def diff = null
                 if (a != null && b != null) {

@@ -17,13 +17,15 @@ class BuildOperationTrace {
         return flattenBuildOperationTree(root)
     }
 
-    private List<Map> flattenBuildOperationTree(def data) {
+    private List<Map> flattenBuildOperationTree(def data, def description = '') {
         def result = []
 
         if (data != null) {
-            result.addAll(data)
             data.each {
-                result.addAll(flattenBuildOperationTree(it.children))
+                it.description = "$description > $it.displayName"
+
+                result.add(it)
+                result.addAll(flattenBuildOperationTree(it.children, it.description))
             }
         }
 

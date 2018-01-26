@@ -20,6 +20,7 @@ abstract class AbstractIntegrationTest extends Specification {
                 .withProjectDir(testDirectory.root)
                 .withArguments(args)
                 .withPluginClasspath()
+                .withDebug(true)
                 .forwardOutput()
                 .build()
         return result
@@ -33,6 +34,7 @@ abstract class AbstractIntegrationTest extends Specification {
                 .withProjectDir(testDirectory.root)
                 .withArguments(args)
                 .withPluginClasspath()
+                .withDebug(true)
                 .forwardOutput()
                 .buildAndFail()
         return failure

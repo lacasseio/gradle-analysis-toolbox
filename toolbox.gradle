@@ -1,3 +1,5 @@
+import io.lacasse.gradle.toolbox.tasks.BuildOperationDurationComparision
+
 initscript {
     repositories {
         mavenLocal()
@@ -26,7 +28,19 @@ rootProject {
         }
     }
 
-    task compare(type: io.lacasse.gradle.toolbox.tasks.CompareTaskExecutionDuration) {
-        resultFile = file('result.csv')
+    tasks.withType(BuildOperationDurationComparision) {
+        resultFile = layout.buildDirectory.file("${it.name}.csv")
+    }
+
+    task compareAllTasks(type: BuildOperationDurationComparision)
+
+    task compareCppCompileTaskExecutionTime(type: BuildOperationDurationComparision) {
+        filter = tasksWithType(CppCompile)
+    }
+
+    task compareCppHeaderProcessTime(type: BuildOperationDurationComparision) {
+        filter = {
+            it.detailsClassName == 'org.gradle.language.nativeplatform.internal.incremental.IncrementalCompileProcessor$1$ProcessSourceFilesDetails'
+        }
     }
 }

@@ -4,3 +4,5 @@ build/
 *.iws
 out/
 .gradle/
+.idea/
+.DS_Store
