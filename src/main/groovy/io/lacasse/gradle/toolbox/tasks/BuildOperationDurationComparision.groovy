@@ -26,6 +26,22 @@ class BuildOperationDurationComparision extends AbstractOperationsTraceTask {
         return tasksWithType(taskClass.canonicalName)
     }
 
+    Closure extractDurationOf(Closure filter) {
+        return {
+            def children = it.children
+            while (!children.empty) {
+                def child = children.pop()
+                if (filter(child)) {
+                    return child.duration
+                }
+                if (child.children != null) {
+                    children.addAll(child.children)
+                }
+            }
+            return null
+        }
+    }
+
     @TaskAction
     void doAction() {
         def stats = new BuildOperationTraceNumericalStatistic.Builder()

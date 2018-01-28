@@ -32,34 +32,44 @@ class AnalysisToolboxPlugin implements Plugin<Project> {
                 resultFile = layout.buildDirectory.file("${it.name}.csv")
             }
 
+            tasks.create('compare') {
+                group = 'Analysis Toolbox'
+                dependsOn tasks.withType(BuildOperationDurationComparision)
+            }
+
 
 
             tasks.create('compareAllTasks', BuildOperationDurationComparision) {
+                description = 'Compares all tasks duration'
                 filter = allTaskExecution()
                 key = { it.details.taskPath }
             }
 
-            tasks.create('compareCppCompileTaskExecutionTime', BuildOperationDurationComparision) {
+            tasks.create('compareCppCompileTask', BuildOperationDurationComparision) {
+                description = 'Compares all `CppCompile` tasks duration'
                 filter = tasksWithType(CppCompile)
                 key = { it.details.taskPath }
             }
 
-            tasks.create('compareCppHeaderProcessTime', BuildOperationDurationComparision) {
+            tasks.create('compareCppHeaderProcess', BuildOperationDurationComparision) {
+                description = 'Compares C++ header processing duration'
                 filter = tasksWithType(CppCompile)
                 key = { it.details.taskPath }
-                value = {
-                    def children = it.children
-                    while (!children.empty) {
-                        def child = children.pop()
-                        if (child.detailsClassName == 'org.gradle.language.nativeplatform.internal.incremental.IncrementalCompileProcessor$1$ProcessSourceFilesDetails') {
-                            return child.duration
-                        }
-                        if (child.children != null) {
-                            children.addAll(child.children)
-                        }
-                    }
-                    return null
-                }
+                value = extractDurationOf { it.detailsClassName == 'org.gradle.language.nativeplatform.internal.incremental.IncrementalCompileProcessor$1$ProcessSourceFilesDetails' }
+            }
+
+            tasks.create('compareCppCompileTaskInputsSnapshot', BuildOperationDurationComparision) {
+                description = 'Compares `CppCompile` tasks inputs snapshot duration'
+                filter = tasksWithType(CppCompile)
+                key = { it.details.taskPath }
+                value = extractDurationOf { it.displayName.startsWith('Snapshot task inputs for') }
+            }
+
+            tasks.create('compareCppCompilation', BuildOperationDurationComparision) {
+                description = 'Compares C++ files compilation duration'
+                filter = tasksWithType(CppCompile)
+                key = { it.details.taskPath }
+                value = extractDurationOf { it.displayName.startsWith('Execute compile for') }
             }
         }
     }
