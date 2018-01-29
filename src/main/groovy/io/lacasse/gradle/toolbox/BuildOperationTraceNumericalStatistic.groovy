@@ -1,9 +1,15 @@
 package io.lacasse.gradle.toolbox
 
+import static io.lacasse.gradle.toolbox.Statistics.computeLowerQuartile
+import static io.lacasse.gradle.toolbox.Statistics.computeMean
+import static io.lacasse.gradle.toolbox.Statistics.computeMedian
+import static io.lacasse.gradle.toolbox.Statistics.computeStandardDeviation
+import static io.lacasse.gradle.toolbox.Statistics.computeUpperQuartile
+import static io.lacasse.gradle.toolbox.Statistics.computeVariance
+import static io.lacasse.gradle.toolbox.Statistics.printSummary
+
 class BuildOperationTraceNumericalStatistic {
     final Map data
-    private Integer cachedMean
-    private Integer cachedMedian
 
     BuildOperationTraceNumericalStatistic(Map data) {
         this.data = data
@@ -19,55 +25,31 @@ class BuildOperationTraceNumericalStatistic {
     }
 
     int getMean() {
-        if (cachedMean == null) {
-            cachedMean = diffValues.sum() / diffValues.size()
-        }
-        return cachedMean
+        return computeMean(diffValues)
     }
 
     int getMedian() {
-        if (cachedMedian == null) {
-            cachedMedian = computeMedian(diffValues)
-        }
-        return cachedMedian
-    }
-
-    private static int computeMedian(def values) {
-        def numberItems = values.size()
-        def midNumber = (int)(numberItems / 2)
-        def median = numberItems % 2 != 0 ? values[midNumber] : (values[midNumber] + values[midNumber - 1]) / 2
-
-        return median
+        return computeMedian(diffValues)
     }
 
     int getVariance() {
-        def deviations = diffValues.collect { it - mean }
-        def squaredDeviations = deviations.collect { it * it }
-        return squaredDeviations.sum() / squaredDeviations.size()
+        return computeVariance(diffValues)
     }
 
     int getStandardDeviation() {
-        return Math.sqrt(variance)
+        return computeStandardDeviation(diffValues)
     }
 
     int getLowerQuartile() {
-        return computeMedian(diffValues.findAll { it < median })
+        return computeLowerQuartile(diffValues)
     }
 
     int getUpperQuartile() {
-        return computeMedian(diffValues.findAll { it > median })
+        return computeUpperQuartile(diffValues)
     }
 
     void printSummary() {
-        println "Minimum: ${min}"
-        println "Lower quartile: ${lowerQuartile}"
-        println "Median: ${median}"
-        println "Upper quartile: ${upperQuartile}"
-        println "Maximum: ${max}"
-        println ""
-        println "Mean: ${mean}"
-        println "Variance: ${variance}"
-        println "Standard deviation: ${standardDeviation}"
+        printSummary(diffValues)
     }
 
     void writeDiff(PrintWriter out) {

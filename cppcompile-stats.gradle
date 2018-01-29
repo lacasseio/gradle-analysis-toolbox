@@ -1,0 +1,113 @@
+import groovy.io.FileType
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
+import io.lacasse.gradle.toolbox.Statistics
+
+import java.security.DigestInputStream
+import java.security.MessageDigest
+
+initscript {
+    repositories {
+        mavenLocal()
+    }
+    dependencies {
+        classpath 'io.lacasse.gradle:gradle-analysis-toolbox:latest.integration'
+    }
+}
+
+class GatherStatisticTask extends DefaultTask {
+    @OutputFile
+    RegularFileProperty outputFile = newOutputFile()
+
+    @TaskAction
+    void doAction() {
+        def db = new Expando()
+        db.projects = project.allprojects.collectEntries { project ->
+            def projectDB = new Expando()
+            project.with {
+                if (project.plugins.hasPlugin(ComponentModelBasePlugin)) {
+                    projectDB.numberOfComponents = project.modelRegistry.realize('components', ComponentSpecContainer).size()
+                    projectDB.plugins = plugins.collect { it.class.canonicalName }.with {
+                        [count: it.size(), values: it]
+                    }
+                    projectDB.toolChains = toolChains.collectEntries {
+                        ["$it.name": it.class.canonicalName]
+                    }.with {
+                        [count: it.size(), values: it]
+                    }
+                    projectDB.platforms = modelRegistry.realize('platforms', PlatformContainer).collectEntries {
+                        ["$it.name": [architecture: it.architecture.name, operatingSystem: it.operatingSystem.name]]
+                    }.with { [count: it.size(), values: it] }
+                    projectDB.flavors = flavors.collect { it.name }.with { [count: it.size(), values: it] }
+                    projectDB.buildTypes = buildTypes.collect { it.name }.with { [count: it.size(), values: it] }
+                    projectDB.tasks = tasks.withType(CppCompile).collectEntries {
+                        def taskDB = new Expando()
+
+                        taskDB.includeRoots = it.includes.collectEntries {
+                            return ["${it.path}": [numberOfIncludeFiles: it.with(countFilesInDirectory())]]
+                        }.with { [count: it.size(), values: it] }
+                        taskDB.numberOfIncludeFiles = it.includes.collect(countFilesInDirectory()).sum()
+                        taskDB.numberOfSourceFile = it.source.size()
+                        taskDB.targetPlatform = it.targetPlatform.with {
+                            [name: it.name, architecture: it.architecture.name, operatingSystem: it.operatingSystem.name]
+                        }
+                        taskDB.toolChain = it.toolChain.with { [name: it.name, type: it.class.canonicalName] }
+                        taskDB.macros = it.macros.with { [count: it.size(), values: it] }
+                        taskDB.compilerArgs = it.compilerArgs.get().with { [count: it.size(), values: it] }
+
+                        return ["$it.path": taskDB]
+                    }.with { [count: it.size(), values: it] }
+                }
+            }
+
+            return ["$project.path": projectDB]
+        }.with { [count: it.size(), values: it] }
+        outputFile.get().asFile.text = JsonOutput.prettyPrint(JsonOutput.toJson(db))
+
+        println outputFile.get().asFile.text
+    }
+
+    Closure countFilesInDirectory() {
+        return {
+            def count = 0
+            it.eachFileRecurse(FileType.FILES) {
+                count++
+            }
+            return count
+        }
+    }
+}
+
+
+class ComputeStatisticTask extends DefaultTask {
+    @InputFile
+    RegularFileProperty inputFile = newInputFile()
+
+    @TaskAction
+    void doAction() {
+        def stats = new JsonSlurper().parse(inputFile.get().asFile)
+        def projects = stats.projects.values.values()
+        def tasks = projects.tasks.values*.values().flatten()
+        Statistics.printSummary(tasks*.numberOfSourceFile, "Number of source files")
+        Statistics.printSummary(tasks*.includeRoots*.count.flatten(), "Number of include root")
+        Statistics.printSummary(tasks*.numberOfIncludeFiles, "Number of include files")
+        Statistics.printSummary(tasks*.includeRoots.values*.values()*.numberOfIncludeFiles.flatten(), "Number of include files per include root")
+
+    }
+}
+
+
+
+rootProject {
+    evaluationDependsOnChildren()
+    task cppProjectStats(type: GatherStatisticTask) {
+        group = 'Analysis Toolbox'
+        description = 'Gathers information about all projects'
+        outputFile = layout.buildDirectory.file('project-stats.json')
+    }
+
+    task stats(type: ComputeStatisticTask) {
+        dependsOn cppProjectStats
+        inputFile = cppProjectStats.outputFile
+    }
+}

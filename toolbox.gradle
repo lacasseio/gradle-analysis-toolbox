@@ -1,5 +1,3 @@
-import io.lacasse.gradle.toolbox.tasks.BuildOperationDurationComparision
-
 initscript {
     repositories {
         mavenLocal()

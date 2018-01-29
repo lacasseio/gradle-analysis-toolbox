@@ -48,7 +48,10 @@ abstract class AbstractIntegrationTest extends Specification {
     }
 
     File file(String filePath) {
-        new File(testDirectory.root, filePath)
+        if (filePath.startsWith('/') || filePath.charAt(1) == ':') {
+            return new File(filePath)
+        }
+        return new File(testDirectory.root, filePath)
     }
 
     File getBuildFile() {

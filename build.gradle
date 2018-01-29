@@ -24,7 +24,9 @@ dependencies {
 }
 
 test {
+    inputs.file('cppcompile-stats.gradle')
     systemProperty('toolbox.path', "$projectDir/toolbox.gradle")
+    systemProperty('projectStats.location', "$projectDir/cppcompile-stats.gradle")
 }
 
 publishing {
