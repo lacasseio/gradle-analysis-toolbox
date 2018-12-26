@@ -29,7 +29,7 @@ class BuildOperationDurationComparision extends AbstractOperationsTraceTask {
     Closure extractDurationOf(Closure filter) {
         return {
             def children = it.children
-            while (!children.empty) {
+            while (children != null && !children.empty) {
                 def child = children.pop()
                 if (filter(child)) {
                     return child.duration

@@ -17,7 +17,7 @@ initscript {
 
 class GatherStatisticTask extends DefaultTask {
     @OutputFile
-    RegularFileProperty outputFile = newOutputFile()
+    File outputFile
 
     @TaskAction
     void doAction() {
@@ -62,16 +62,18 @@ class GatherStatisticTask extends DefaultTask {
 
             return ["$project.path": projectDB]
         }.with { [count: it.size(), values: it] }
-        outputFile.get().asFile.text = JsonOutput.prettyPrint(JsonOutput.toJson(db))
+        outputFile.text = JsonOutput.prettyPrint(JsonOutput.toJson(db))
 
-        println outputFile.get().asFile.text
+        println outputFile.text
     }
 
     Closure countFilesInDirectory() {
         return {
             def count = 0
-            it.eachFileRecurse(FileType.FILES) {
-                count++
+            if (it.exists()) {
+                it.eachFileRecurse(FileType.FILES) {
+                    count++
+                }
             }
             return count
         }
@@ -81,18 +83,19 @@ class GatherStatisticTask extends DefaultTask {
 
 class ComputeStatisticTask extends DefaultTask {
     @InputFile
-    RegularFileProperty inputFile = newInputFile()
+    File inputFile
 
     @TaskAction
     void doAction() {
-        def stats = new JsonSlurper().parse(inputFile.get().asFile)
+        def stats = new JsonSlurper().parse(inputFile)
         def projects = stats.projects.values.values()
         def tasks = projects.tasks.values*.values().flatten()
         Statistics.printSummary(tasks*.numberOfSourceFile, "Number of source files")
         Statistics.printSummary(tasks*.includeRoots*.count.flatten(), "Number of include root")
         Statistics.printSummary(tasks*.numberOfIncludeFiles, "Number of include files")
         Statistics.printSummary(tasks*.includeRoots.values*.values()*.numberOfIncludeFiles.flatten(), "Number of include files per include root")
-
+        Statistics.printSummary([projects.size()], "Number of projects")
+        Statistics.printSummary(tasks*.size(), "Number of CppCompile tasks per project")
     }
 }
 
@@ -103,7 +106,7 @@ rootProject {
     task cppProjectStats(type: GatherStatisticTask) {
         group = 'Analysis Toolbox'
         description = 'Gathers information about all projects'
-        outputFile = layout.buildDirectory.file('project-stats.json')
+        outputFile = file("$buildDir/project-stats.json")
     }
 
     task stats(type: ComputeStatisticTask) {

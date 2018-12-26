@@ -12,6 +12,7 @@ class BuildOperationTraceNumericalStatistic {
     final Map data
 
     BuildOperationTraceNumericalStatistic(Map data) {
+        println data
         this.data = data
     }
 

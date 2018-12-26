@@ -1,31 +1,33 @@
 package io.lacasse.gradle.toolbox
 
 class Statistics {
-    static int computeMedian(def values) {
-        def numberItems = values.size()
-        def midNumber = (int)(numberItems / 2)
-        def median = numberItems % 2 != 0 ? values[midNumber] : (values[midNumber] + values[midNumber - 1]) / 2
+    static long computeMedian(def values) {
+        def sortedValues = values.sort()
+        def numberItems = sortedValues.size()
+        def midNumber = (long)(numberItems / 2)
+        def median = numberItems % 2 != 0 ? sortedValues[midNumber] : (sortedValues[midNumber] + sortedValues[midNumber - 1]) / 2
 
         return median
     }
 
-    static int computeVariance(def values) {
+    static long computeVariance(def values) {
         def mean = computeMean(values)
-        def deviations = values.collect { it - mean }
-        def squaredDeviations = deviations.collect { it * it }
+        def deviations = values.collect { it.minus(mean) }
+        def squaredDeviations = deviations.collect { it.power(2) }
         return squaredDeviations.sum() / squaredDeviations.size()
     }
 
-    static int computeMean(def values) {
+    static long computeMean(def values) {
         return values.sum() / values.size()
     }
 
-    static int computeStandardDeviation(def values) {
-        return Math.sqrt(computeVariance(values))
+    static long computeStandardDeviation(def values) {
+        def variance = computeVariance(values)
+        return Math.sqrt(variance)
     }
 
-    static int computeLowerQuartile(def values) {
-        int median = computeMedian(values)
+    static long computeLowerQuartile(def values) {
+        long median = computeMedian(values)
         def lowerValues = values.findAll { it < median }
         if (lowerValues.empty) {
             return median
@@ -33,8 +35,8 @@ class Statistics {
         return computeMedian(lowerValues)
     }
 
-    static int computeUpperQuartile(def values) {
-        int median = computeMedian(values)
+    static long computeUpperQuartile(def values) {
+        long median = computeMedian(values)
         def upperValues = values.findAll { it > median }
         if (upperValues.empty) {
             return median
@@ -42,11 +44,11 @@ class Statistics {
         return computeMedian(upperValues)
     }
 
-    static int computeMinimum(def values) {
+    static long computeMinimum(def values) {
         return Collections.min(values)
     }
 
-    static int computeMaximum(def values) {
+    static long computeMaximum(def values) {
         return Collections.max(values)
     }
 

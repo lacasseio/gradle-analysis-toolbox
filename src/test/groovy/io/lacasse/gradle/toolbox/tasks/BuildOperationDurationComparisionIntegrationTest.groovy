@@ -38,6 +38,28 @@ class BuildOperationDurationComparisionIntegrationTest extends AbstractIntegrati
         result[2] == [' > Run build > Run tasks > Task :server:compileMainExecutableMainCpp','1474','2661','1187']
     }
 
+    def "bob"() {
+        def sourceTrace = file('source.json')
+        sourceTrace.text = getClass().getResource('operations-trace-4.2.1.json').text
+        def targetTrace = file('target.json')
+        targetTrace.text = getClass().getResource('operations-trace-master.json').text
+
+        buildFile << """
+            task bob(type: ${BuildOperationDurationComparision.canonicalName}) {
+                sourceTrace = file('${sourceTrace.path}')
+                targetTrace = file('${targetTrace.path}')
+                filter = tasksWithType(CppCompile)
+                resultFile = file('result.csv')
+                
+                def c = extractDurationOf {true}
+                c([:])
+            }
+        """
+
+        expect:
+        succeeds 'bob'
+    }
+
 
     List<List<String>> parseCsv(File f) {
         assert f.exists()
